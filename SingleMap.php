@@ -29,6 +29,8 @@ class SingleMap extends Widget
     public $location;
     
     public $zoom = 13;
+    
+    public $type;
 
 
     /**
