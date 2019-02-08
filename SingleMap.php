@@ -15,23 +15,46 @@ use elektromann\googlemaps\bundles\GoogleMapsAsset;
  * 'boxWidth' => '100%'
  * 
  * 'boxHeight' => '300px'
+ * 
+ * 'location' => [46.4174, 20.33] OR 'Szeged'
+ * 
+ * 'zoom' => 13
+ * 
+ * 'type' => self::TYPE_ROADMAP
+ * 
+ * 'markers' => []
  */
 class SingleMap extends Widget
 {
-    public $apiKey;
+    /**
+     * Displays the default road map view. This is the default map type.
+     */
+    const TYPE_ROADMAP = "roadmap";
     
-    public $boxWidth = "100%";
+    /**
+     * Displays Google Earth satellite images.
+     */
+    const TYPE_SATELLITE = "satellite";
     
-    public $boxHeight = "300px";
+    /**
+     * Displays a mixture of normal and satellite views.
+     */
+    const TYPE_HYBRID = "hybrid";
     
-    public $mapId = "googleMap";
-    
-    public $location;
-    
-    public $zoom = 13;
-    
-    public $type;
+    /**
+     * Displays a physical map based on terrain information.
+     */
+    const TYPE_TERRAIN = "terrain";
 
+
+    public $apiKey;
+    public $boxWidth = "100%";
+    public $boxHeight = "300px";
+    public $mapId = "googleMap";
+    public $location;
+    public $zoom = 13;
+    public $type;
+    public $markers = [];
 
     /**
      * {@inheritdoc}
@@ -51,13 +74,17 @@ class SingleMap extends Widget
         }
         
         if(is_array($this->location)) {
-            if(!isset($this->location[0]) || !isset($this->location[1])) {
+            if(!array_key_exists(0, $this->location) || !array_key_exists(1, $this->location)) {
                 throw new InvalidConfigException("Please set 2 coordinates!");
             }
             
             if(!is_numeric($this->location[0]) || !is_numeric($this->location[1])) {
                 throw  new InvalidConfigException("Coordinates must be integers!");
             }
+        }
+        
+        if(empty($this->type)) {
+            $this->type = self::TYPE_ROADMAP;
         }
     }
     
@@ -66,9 +93,10 @@ class SingleMap extends Widget
      */
     public function run()
     {
-        $mapOptions = [
-            'center' => $this->location,
-            'zoom' => $this->zoom,
+        $markers = [
+            'position' => "valami",
+            'title' => "cím",
+            'content' => "Tartalom",
         ];
         
         return $this->render('single-map', [
@@ -76,35 +104,50 @@ class SingleMap extends Widget
             'boxWidth' => $this->boxWidth,
             'boxHeight' => $this->boxHeight,
             'mapId' => $this->mapId,
-            'mapOptions' => $this->createJson(),
+            'options' => $this->createOptions(),
         ]);
     }
     
     /**
      * @return string
      */
-    public function createJson()
+    private function createOptions()
     {
-        if(is_array($this->location)) {
-            $center = $this->location[0] . ", " . $this->location[1];
-        } else {
-            $center = "46.4174, 20.33";
-        }
-        
-        $json = "{";
-        $json .= "mapOptions: {";
-        $json .= "center: new google.maps.LatLng($center)";
-        $json .= ", zoom: " . $this->zoom;
-        $json .= "}";
+        $options['mapOptions'] = [
+            'center' => is_array($this->location) ? $this->location : [46.4174, 20.33],
+            'zoom' => $this->zoom,
+            'mapTypeId' => $this->type
+        ];
         
         if(is_string($this->location)) {
-            $json .= ", geocodeOptions: {";
-            $json .= '"address": "' . $this->location . '"';
-            $json .= "}";
+            $options['geocodeOptions'] = [
+                'address' => $this->location
+            ];
         }
         
-        $json .= "}";
+        if(!empty($this->markers)) {
+            $options['markers'] = $this->createMarkers();
+        }
         
-        return $json;
+        return $options;
+    }
+    
+    /**
+     * @return string
+     */
+    private function createMarkers()
+    {
+        $markers = [];
+        foreach ($this->markers as $marker) {
+            $location = array_key_exists("location", $marker) ? $marker['location'] : $this->location;
+            
+            $markers[] = [
+            'location' => $location,
+            'title' => array_key_exists("title", $marker) ? $marker['title'] : null,
+            'description' => array_key_exists("description", $marker) ? $marker['description'] : null,
+            ];
+        }
+        
+        return $markers;
     }
 }
