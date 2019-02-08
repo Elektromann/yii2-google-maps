@@ -2,6 +2,7 @@
 
 namespace elektromann\googlemaps;
 
+use yii\web\View;
 use yii\base\Widget;
 use yii\base\InvalidConfigException;
 use elektromann\googlemaps\GoogleMapsComponent;
@@ -61,8 +62,6 @@ class SingleMap extends Widget
      */
     public function init()
     {
-        GoogleMapsAsset::register($this->getView());
-        
         parent::init();
         
         if(empty($this->apiKey)) {
@@ -72,6 +71,11 @@ class SingleMap extends Widget
                 throw new InvalidConfigException("Api key is required!");
             }
         }
+        
+        GoogleMapsAsset::register($this->getView());
+        $this->view->registerJsFile("https://maps.googleapis.com/maps/api/js?key={$this->apiKey}&callback=createMap", [
+            'position' => View::POS_END,
+        ]);
         
         if(is_array($this->location)) {
             if(!array_key_exists(0, $this->location) || !array_key_exists(1, $this->location)) {

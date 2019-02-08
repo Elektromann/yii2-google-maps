@@ -32,5 +32,3 @@ $mapOptions = $options['mapOptions'];
         addMap("<?= $mapId ?>", options);
     }
 </script>
-
-<script <?= 'src="https://maps.googleapis.com/maps/api/js?key=' . $apiKey . '&callback=createMap"' ?>></script>
